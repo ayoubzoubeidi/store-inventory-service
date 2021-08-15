@@ -8,6 +8,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.util.UUID;
+
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/inventory")
@@ -15,9 +17,14 @@ public class InventoryController {
 
     private final InventoryService inventoryService;
 
-    @GetMapping("/{upc}")
+    @GetMapping("/{productId}/id")
+    public ResponseEntity getQOH(UUID productId) {
+        return new ResponseEntity(inventoryService.getQuantityOnHandByProductId(productId), HttpStatus.OK);
+    }
+
+    @GetMapping("/{upc}/upc")
     public ResponseEntity getQOH(String upc) {
-        return new ResponseEntity(inventoryService.getQuantityOnHand(upc), HttpStatus.OK);
+        return new ResponseEntity(inventoryService.getQuantityOnHandByUpc(upc), HttpStatus.OK);
     }
 
 }
