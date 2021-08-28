@@ -48,6 +48,12 @@ public class AllocationServiceImpl implements AllocationService {
 
     @Override
     public void deAllocate(OrderDto order) {
-
+        for (OrderLineDto orderLine : order.getOrderLines()) {
+            if (orderLine.getQuantityAllocated() > 0) {
+                inventoryRepository.saveAndFlush(
+                        ProductInventory.builder().productId(orderLine.getProductId()).quantityOnHand(orderLine.getQuantityAllocated()).build()
+                );
+            }
+        }
     }
 }
