@@ -25,7 +25,6 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     public Integer getQuantityOnHandByUpc(String upc) {
         List<ProductInventory> products = productInventoryRepository.findAllByUpc(upc);
-        System.err.println(products.size());
         return products.stream().mapToInt(ProductInventory::getQuantityOnHand).sum();
     }
 
