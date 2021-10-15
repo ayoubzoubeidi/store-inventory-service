@@ -1,15 +1,14 @@
 spring:
+  application:
+    name: inventory-service
   profiles:
     group:
-      dev : local-discovery, local-mq, local-db
-
+      dev: local-discovery, local-mq, local-db
 ---
 spring:
   config:
     activate:
       on-profile: local-discovery
-  application:
-    name: inventory-service
   cloud:
     config:
       discovery:
