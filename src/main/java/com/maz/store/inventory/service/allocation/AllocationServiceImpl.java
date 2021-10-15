@@ -2,6 +2,7 @@ package com.maz.store.inventory.service.allocation;
 
 import com.maz.store.inventory.domain.ProductInventory;
 import com.maz.store.inventory.repositories.ProductInventoryRepository;
+import com.maz.store.model.inventory.AllocationResponse;
 import com.maz.store.model.order.OrderDto;
 import com.maz.store.model.order.OrderLineDto;
 import lombok.RequiredArgsConstructor;
@@ -17,33 +18,41 @@ public class AllocationServiceImpl implements AllocationService {
 
 
     @Override
-    public void allocate(OrderDto order) {
+    public AllocationResponse allocate(OrderDto order) {
 
-        for (OrderLineDto orderLine : order.getOrderLines()) {
-            List<ProductInventory> inventory = inventoryRepository.findAllByUpc(orderLine.getUpc());
-            var quantityToAllocate = orderLine.getOrderQuantity();
-            for (ProductInventory inventoryLine : inventory) {
+        try {
+            var partialAllocation = false;
 
+            for (OrderLineDto orderLine : order.getOrderLines()) {
+                List<ProductInventory> inventory = inventoryRepository.findAllByUpc(orderLine.getUpc());
+                var quantityToAllocate = orderLine.getOrderQuantity();
+                for (ProductInventory inventoryLine : inventory) {
 
-                if (quantityToAllocate > 0) {
+                    if (quantityToAllocate > 0) {
 
-                    if (inventoryLine.getQuantityOnHand() <= quantityToAllocate) {
-                        quantityToAllocate -= inventoryLine.getQuantityOnHand();
-                        inventoryRepository.delete(inventoryLine);
-                    } else {
-                        var restInventory = inventoryLine.getQuantityOnHand() - quantityToAllocate;
-                        quantityToAllocate = 0;
-                        inventoryLine.setQuantityOnHand(restInventory);
-                        inventoryRepository.saveAndFlush(inventoryLine);
-                        break;
+                        if (inventoryLine.getQuantityOnHand() <= quantityToAllocate) {
+                            quantityToAllocate -= inventoryLine.getQuantityOnHand();
+                            inventoryRepository.delete(inventoryLine);
+                        } else {
+                            var restInventory = inventoryLine.getQuantityOnHand() - quantityToAllocate;
+                            quantityToAllocate = 0;
+                            inventoryLine.setQuantityOnHand(restInventory);
+                            inventoryRepository.saveAndFlush(inventoryLine);
+                            break;
+                        }
+
                     }
-
                 }
+                orderLine.setQuantityAllocated(orderLine.getOrderQuantity() - quantityToAllocate);
+                partialAllocation = quantityToAllocate != 0;
             }
-            orderLine.setQuantityAllocated(orderLine.getOrderQuantity() - quantityToAllocate);
+
+            return AllocationResponse.builder()
+                    .order(order).partialAllocation(partialAllocation).allocationError(false).build();
+        } catch (Exception ex) {
+            return AllocationResponse.builder()
+                    .order(order).partialAllocation(false).allocationError(false).build();
         }
-
-
     }
 
     @Override
